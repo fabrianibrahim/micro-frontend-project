@@ -4,16 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "install:bootstrap": "cd bootstrap && npm ci",
-    "dev:bootstrap": "parcel watch ./bootstrap/index.html",
-    "build:bootstrap": "parcel ./bootstrap/index.html --out-dir ./bootstrap/dist",
-    "install:welcome": "cd welcome && npm ci",
-    "dev:welcome": "cd welcome && npm run serve",
+    "web-server": "node server.js",
+    "install:all": "npm-run-all install:bootstrap install:music install:welcome",
+    "install:bootstrap": "cd bootstrap && npm install",
+    "install:welcome": "cd welcome && npm install",
+    "install:music": "cd music && npm install",
+    "build:bootstrap:watch": "cd bootstrap && npm run build:watch",
+    "build:music": "cd music && npm run build",
     "build:welcome": "cd welcome && npm run build",
-    "install:music": "cd music && npm ci",
-    "dev:music": "cd music && npm start",
-    "build:music": "cd music && npm run build"
+    "dev:bootstrap": "npm-run-all build:music build:welcome --parallel build:bootstrap:watch web-server",
+    "dev:welcome": "cd welcome && npm run serve",
+    "dev:music": "cd music && npm start"
   },
   "repository": {
     "type": "git",
@@ -27,7 +28,6 @@
   "homepage": "https://github.com/fabrianibrahim/micro-frontend-project#readme",
   "dependencies": {
     "express": "^4.18.2",
-    "parcel": "^2.8.3",
     "path": "^0.12.7"
   }
 }
