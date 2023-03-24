@@ -12,6 +12,7 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  base: 'hello'
 });
 
 createApp(App).use(router).mount('#app');
