@@ -564,6 +564,7 @@ var _download = require("./download");
 var _downloadDefault = parcelHelpers.interopDefault(_download);
 var _mount = require("./mount");
 var _mountDefault = parcelHelpers.interopDefault(_mount);
+window.bootstrap = {};
 function getMicroFrontendNameFromPathname(pathname = window.location.pathname) {
     const [, microFrontendId] = pathname.split("/");
     const microFrontend = (0, _configDefault.default).microFrontends.find((microFrontend)=>microFrontend.pathnameId === microFrontendId);
@@ -576,8 +577,31 @@ function getMicroFrontendEntryPointUrl(microFrontendName) {
 const microFrontendName = getMicroFrontendNameFromPathname();
 if (!microFrontendName) // TODO: load a "default" MFE
 throw new Error("I don't know which Micro Frontend to load for the current URL :(");
-const microFrontendEntryPointUrl = getMicroFrontendEntryPointUrl(microFrontendName);
-(0, _downloadDefault.default)(microFrontendEntryPointUrl).then((microFrontendDocument)=>(0, _mountDefault.default)(microFrontendName, microFrontendDocument));
+function unmountMicroFrontendFromPage(microFrontendName) {
+    const microFrontendNodes = document.querySelectorAll(`[data-micro-frontend="${microFrontendName}"]`);
+    microFrontendNodes.forEach((node)=>node.remove());
+}
+function updateBrowserUrl(pathname) {
+    window.history.pushState({}, "", pathname);
+}
+function updateBaseElementHref(microFrontendName) {
+    const baseElement = document.querySelector("base");
+    baseElement.setAttribute("href", `/mfe/${microFrontendName}/`);
+}
+window.bootstrap.router = {
+    navigateTo: function(pathname) {
+        const microFrontendName = getMicroFrontendNameFromPathname(pathname);
+        if (!microFrontendName) // TODO: load a "default" MFE
+        throw new Error(`I don't know which Micro Frontend to load for the pathname: ${pathname}`);
+        const microFrontendEntryPointUrl = getMicroFrontendEntryPointUrl(microFrontendName);
+        (0, _downloadDefault.default)(microFrontendEntryPointUrl).then((microFrontendDocument)=>{
+            unmountMicroFrontendFromPage(microFrontendName);
+            (0, _mountDefault.default)(microFrontendName, microFrontendDocument);
+            updateBrowserUrl(pathname);
+            updateBaseElementHref(microFrontendName);
+        });
+    }
+};
 
 },{"./config":"jtCLN","./download":"8EI4w","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./mount":"k8IaG"}],"jtCLN":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -649,7 +673,7 @@ exports.default = downloadDocument;
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"k8IaG":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-function moveNodeToDocument(parent, document1) {
+function moveNodeToDocument(parent, document1, markClass) {
     return function moveNode(node) {
         // Cloning or Adopting <scripts> nodes doesn't re-evaluate them
         // Read more here: https://stackoverflow.com/questions/28771542/why-dont-clonenode-script-tags-execute
@@ -663,20 +687,21 @@ function moveNodeToDocument(parent, document1) {
             return;
         }
         const adoptedNode = document1.adoptNode(node);
+        adoptedNode.classList.add(markClass); // add a specific class to the node
         parent.appendChild(adoptedNode);
     };
 }
-function addOrUpdateBaseTag(microFrontendName) {
-    const baseElement = document.createElement("base");
-    baseElement.setAttribute("href", `/mfe/${microFrontendName}/`);
+function addOrUpdateBaseTag(microFrontendName, href) {
+    const baseElement = document.querySelector("base") || document.createElement("base"); // get the existing element or create a new one if it doesn't exist
+    baseElement.setAttribute("href", href);
     document.head.appendChild(baseElement);
 }
 function mountMicroFrontendInPage(microFrontendName, microFrontendDocument) {
     addOrUpdateBaseTag(microFrontendName);
     const microFrontendHeadNodes = microFrontendDocument.querySelectorAll("head>*");
     const microFrontendBodyNodes = microFrontendDocument.querySelectorAll("body>*");
-    microFrontendHeadNodes.forEach(moveNodeToDocument(document.head, document));
-    microFrontendBodyNodes.forEach(moveNodeToDocument(document.body, document));
+    microFrontendHeadNodes.forEach(moveNodeToDocument(document.head, document, "MICRO_FRONTEND"));
+    microFrontendBodyNodes.forEach(moveNodeToDocument(document.body, document, "MICRO_FRONTEND"));
 }
 exports.default = mountMicroFrontendInPage;
 
