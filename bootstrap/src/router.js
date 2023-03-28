@@ -3,6 +3,28 @@ import download from "./download";
 import { mountMicroFrontendInPage, unmountMicroFrontendInPage } from "./mount";
 import { dispatchEvent, eventNames } from "./events";
 
+const defaultPathname = '/hello';
+const defaultPathnameWhenLoggedIn = '/play';
+
+let isUserLoggedIn = false;
+
+function validateToken() {
+    const token = getToken();
+    if (!token) {
+        return Promise.resolve(false);
+    }
+
+    return xhrJson({
+        url: 'https://buildingmfe.maxgallo.io/api/validate',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+        .then(() => isUserLoggedIn = true)
+        .catch(() => isUserLoggedIn = false)
+}
+
 function getMicroFrontendNameFromPathname(pathname) {
     const [, microFrontendId] = pathname.split("/");
     const microFrontend = config.microFrontends.find(
@@ -25,11 +47,19 @@ const navigationHistory = [];
 function navigateTo(pathname) {
     const microFrontendName = getMicroFrontendNameFromPathname(pathname);
 
-    if (!microFrontendName) {
-        // TODO: load a "default" MFE
-        throw new Error(
-            `I don't know which Micro Frontend to load for "${pathname}"`
-        );
+    if (!microFrontend) {
+        console.log(`Dunno which micro frontend to load for "${pathname}". I'm redirecting you to "${defaultPathname}"`);
+        return navigateTo(defaultPathname);
+    }
+
+    if (!isUserLoggedIn && microFrontend.restricted) {
+        console.log(`You\'re not athorized to access this micro frontend. I\'m redirecting you to "${defaultPathname}"`);
+        return navigateTo(defaultPathname);
+    }
+
+    if (isUserLoggedIn && !microFrontend.restricted) {
+        console.log(`Since you're logged in, I'm redirecting you to the "music" micro frontend at "${defaultPathnameWhenLoggedIn}"`);
+        return navigateTo(defaultPathnameWhenLoggedIn);
     }
 
     if (navigationHistory.length > 0) {

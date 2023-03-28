@@ -43,6 +43,7 @@ export default {
           if (response.status === 200) {
             const token = response && response.data && response.data.data && response.data.data.token;
             console.log('TOKEN', token);
+            window.bootstrap.auth.setToken(token);
             window.bootstrap.router.navigateTo('/play');
           } else {
             throw new Error('Invalid credentials.');
