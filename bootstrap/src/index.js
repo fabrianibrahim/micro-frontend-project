@@ -1,15 +1,15 @@
 import { navigateTo } from "./router";
 import { createPublicApi } from "./publicApi";
 import { eventNames } from "./events";
-import auth from "./auth";
+import { setToken, getToken, validateToken } from './auth';
 
 createPublicApi({
     navigateTo,
-    auth,
-    eventNames
+    eventNames,
+    setToken,
+    getToken,
 });
 
 validateToken().then(
     () => navigateTo(window.location.pathname)
 );
-

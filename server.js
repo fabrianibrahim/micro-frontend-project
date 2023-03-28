@@ -3,9 +3,9 @@ const path = require('path');
 
 const app = express();
 
-app.use('/', express.static(path.join(__dirname, 'bootstrap', 'dist')));
-app.use('/mfe/welcome', express.static(path.join(__dirname, 'welcome', 'dist')));
-app.use('/mfe/music', express.static(path.join(__dirname, 'music', 'build')));
+app.use("/mfe/music", express.static("./music/build"));
+app.use("/mfe/welcome", express.static("./welcome/dist"));
+app.use("/", express.static("./bootstrap/dist"));
 
 app.all('/*', function (req, res) {
   res.sendFile('index.html', { root: './bootstrap/dist' });

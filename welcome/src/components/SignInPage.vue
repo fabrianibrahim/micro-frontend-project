@@ -24,6 +24,7 @@
 
 <script>
 import axios from 'axios';
+import { goToMusicMicroFrontend, setAuthToken } from '../bootstrap';
 
 export default {
   name: 'SignInPage',
@@ -40,14 +41,9 @@ export default {
         password: this.password,
       })
         .then(response => {
-          if (response.status === 200) {
-            const token = response && response.data && response.data.data && response.data.data.token;
-            console.log('TOKEN', token);
-            window.bootstrap.auth.setToken(token);
-            window.bootstrap.router.navigateTo('/play');
-          } else {
-            throw new Error('Invalid credentials.');
-          }
+          const token = response && response.data && response.data.data && response.data.data.token;
+          setAuthToken(token);
+          goToMusicMicroFrontend();
         })
         .catch(error => {
           console.error(error);

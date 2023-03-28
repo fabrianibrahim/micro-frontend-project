@@ -1,9 +1,12 @@
-function createPublicApi({ navigateTo, auth, eventNames }) {
+function createPublicApi({ navigateTo, eventNames, setToken, getToken }) {
     window.bootstrap = {
         router: {
             navigateTo
         },
-        auth,
+        auth: {
+            setToken,
+            getToken,
+        },
         eventNames
     };
 }

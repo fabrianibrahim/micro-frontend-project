@@ -3,12 +3,16 @@ const configuration = {
         {
             name: 'welcome',
             pathnameId: 'hello',
+            restricted: false,
         },
         {
             name: 'music',
-            pathnameId: 'play'
+            pathnameId: 'play',
+            restricted: true,
         },
     ],
+    defaultPathname: '/hello',
+    defaultPathnameWhenLoggedIn: '/play'
 };
 
 export default configuration;
