@@ -1,16 +1,17 @@
 <template>
-    <div>
-      <h1>Welcome to the landing page!</h1>
-    </div>
-  </template>
+  <div>
+    <h1>Welcome to the landing page!</h1>
+    <router-link to="/signin">Sign In</router-link>
+  </div>
+</template>
   
-  <script>
-  export default {
-    name: 'LandingPage',
-  };
-  </script>
+<script>
+export default {
+  name: 'LandingPage',
+};
+</script>
   
-  <style>
-  /* Add any CSS styles for the component here */
-  </style>
+<style>
+/* Add any CSS styles for the component here */
+</style>
   

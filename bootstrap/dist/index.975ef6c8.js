@@ -557,15 +557,21 @@ function hmrAccept(bundle, id) {
 }
 
 },{}],"8lqZg":[function(require,module,exports) {
+var _router = require("./router");
+var _publicApi = require("./publicApi");
+(0, _publicApi.createPublicApi)((0, _router.navigateTo));
+(0, _router.navigateTo)(window.location.pathname);
+
+},{"./router":"l7a58","./publicApi":"iQGVZ"}],"l7a58":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "navigateTo", ()=>navigateTo);
 var _config = require("./config");
 var _configDefault = parcelHelpers.interopDefault(_config);
 var _download = require("./download");
 var _downloadDefault = parcelHelpers.interopDefault(_download);
 var _mount = require("./mount");
-var _mountDefault = parcelHelpers.interopDefault(_mount);
-window.bootstrap = {};
-function getMicroFrontendNameFromPathname(pathname = window.location.pathname) {
+function getMicroFrontendNameFromPathname(pathname) {
     const [, microFrontendId] = pathname.split("/");
     const microFrontend = (0, _configDefault.default).microFrontends.find((microFrontend)=>microFrontend.pathnameId === microFrontendId);
     if (!microFrontend) return;
@@ -574,36 +580,19 @@ function getMicroFrontendNameFromPathname(pathname = window.location.pathname) {
 function getMicroFrontendEntryPointUrl(microFrontendName) {
     return `/mfe/${microFrontendName}/index.html`;
 }
-const microFrontendName = getMicroFrontendNameFromPathname();
-if (!microFrontendName) // TODO: load a "default" MFE
-throw new Error("I don't know which Micro Frontend to load for the current URL :(");
-function unmountMicroFrontendFromPage(microFrontendName) {
-    const microFrontendNodes = document.querySelectorAll(`[data-micro-frontend="${microFrontendName}"]`);
-    microFrontendNodes.forEach((node)=>node.remove());
-}
-function updateBrowserUrl(pathname) {
+const navigationHistory = [];
+function navigateTo(pathname) {
+    if (navigationHistory.length > 0) (0, _mount.unmountMicroFrontendInPage)();
+    const microFrontendName = getMicroFrontendNameFromPathname(pathname);
+    if (!microFrontendName) // TODO: load a "default" MFE
+    throw new Error("I don't know which Micro Frontend to load for the current URL :(");
+    navigationHistory.push(pathname);
     window.history.pushState({}, "", pathname);
+    const microFrontendEntryPointUrl = getMicroFrontendEntryPointUrl(microFrontendName);
+    return (0, _downloadDefault.default)(microFrontendEntryPointUrl).then((microFrontendDocument)=>(0, _mount.mountMicroFrontendInPage)(microFrontendName, microFrontendDocument));
 }
-function updateBaseElementHref(microFrontendName) {
-    const baseElement = document.querySelector("base");
-    baseElement.setAttribute("href", `/mfe/${microFrontendName}/`);
-}
-window.bootstrap.router = {
-    navigateTo: function(pathname) {
-        const microFrontendName = getMicroFrontendNameFromPathname(pathname);
-        if (!microFrontendName) // TODO: load a "default" MFE
-        throw new Error(`I don't know which Micro Frontend to load for the pathname: ${pathname}`);
-        const microFrontendEntryPointUrl = getMicroFrontendEntryPointUrl(microFrontendName);
-        (0, _downloadDefault.default)(microFrontendEntryPointUrl).then((microFrontendDocument)=>{
-            unmountMicroFrontendFromPage(microFrontendName);
-            (0, _mountDefault.default)(microFrontendName, microFrontendDocument);
-            updateBrowserUrl(pathname);
-            updateBaseElementHref(microFrontendName);
-        });
-    }
-};
 
-},{"./config":"jtCLN","./download":"8EI4w","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./mount":"k8IaG"}],"jtCLN":[function(require,module,exports) {
+},{"./config":"jtCLN","./download":"8EI4w","./mount":"k8IaG","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jtCLN":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 const configuration = {
@@ -673,7 +662,10 @@ exports.default = downloadDocument;
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"k8IaG":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-function moveNodeToDocument(parent, document1, markClass) {
+parcelHelpers.export(exports, "mountMicroFrontendInPage", ()=>mountMicroFrontendInPage);
+parcelHelpers.export(exports, "unmountMicroFrontendInPage", ()=>unmountMicroFrontendInPage);
+const CLASS_NAME = "mounted-by-bootstrap";
+function moveNodeToDocument(parent, document1) {
     return function moveNode(node) {
         // Cloning or Adopting <scripts> nodes doesn't re-evaluate them
         // Read more here: https://stackoverflow.com/questions/28771542/why-dont-clonenode-script-tags-execute
@@ -683,27 +675,50 @@ function moveNodeToDocument(parent, document1, markClass) {
                 ...node.attributes
             ].forEach((attribute)=>clonedNode.setAttribute(attribute.name, attribute.value));
             clonedNode.innerHTML = node.innerHTML;
+            clonedNode.classList.add(CLASS_NAME);
             parent.appendChild(clonedNode);
             return;
         }
         const adoptedNode = document1.adoptNode(node);
-        adoptedNode.classList.add(markClass); // add a specific class to the node
+        adoptedNode.classList.add(CLASS_NAME);
         parent.appendChild(adoptedNode);
     };
 }
-function addOrUpdateBaseTag(microFrontendName, href) {
-    const baseElement = document.querySelector("base") || document.createElement("base"); // get the existing element or create a new one if it doesn't exist
-    baseElement.setAttribute("href", href);
+function addOrUpdateBaseTag(microFrontendName) {
+    const [existingBaseElement] = document.getElementsByTagName("base");
+    if (existingBaseElement) {
+        existingBaseElement.setAttribute("href", `/mfe/${microFrontendName}/`);
+        return;
+    }
+    const baseElement = document.createElement("base");
+    baseElement.setAttribute("href", `/mfe/${microFrontendName}/`);
     document.head.appendChild(baseElement);
 }
 function mountMicroFrontendInPage(microFrontendName, microFrontendDocument) {
     addOrUpdateBaseTag(microFrontendName);
-    const microFrontendHeadNodes = microFrontendDocument.querySelectorAll("head>*");
-    const microFrontendBodyNodes = microFrontendDocument.querySelectorAll("body>*");
-    microFrontendHeadNodes.forEach(moveNodeToDocument(document.head, document, "MICRO_FRONTEND"));
-    microFrontendBodyNodes.forEach(moveNodeToDocument(document.body, document, "MICRO_FRONTEND"));
+    const microFrontendHeadElements = microFrontendDocument.querySelectorAll("head>*");
+    const microFrontendBodyElements = microFrontendDocument.querySelectorAll("body>*");
+    microFrontendHeadElements.forEach(moveNodeToDocument(document.head, document));
+    microFrontendBodyElements.forEach(moveNodeToDocument(document.body, document));
 }
-exports.default = mountMicroFrontendInPage;
+function unmountMicroFrontendInPage() {
+    const microFrontendElements = document.querySelectorAll(`.${CLASS_NAME}`);
+    microFrontendElements.forEach((element)=>{
+        if (element.parentElement) element.parentElement.removeChild(element);
+    });
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iQGVZ":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "createPublicApi", ()=>createPublicApi);
+function createPublicApi(navigateTo) {
+    window.bootstrap = {
+        router: {
+            navigateTo
+        }
+    };
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["412hi","8lqZg"], "8lqZg", "parcelRequire561b")
 
