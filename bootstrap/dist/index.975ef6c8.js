@@ -559,10 +559,14 @@ function hmrAccept(bundle, id) {
 },{}],"8lqZg":[function(require,module,exports) {
 var _router = require("./router");
 var _publicApi = require("./publicApi");
-(0, _publicApi.createPublicApi)((0, _router.navigateTo));
+var _events = require("./events");
+(0, _publicApi.createPublicApi)({
+    navigateTo: (0, _router.navigateTo),
+    eventNames: (0, _events.eventNames)
+});
 (0, _router.navigateTo)(window.location.pathname);
 
-},{"./router":"l7a58","./publicApi":"iQGVZ"}],"l7a58":[function(require,module,exports) {
+},{"./router":"l7a58","./publicApi":"iQGVZ","./events":"74nY7"}],"l7a58":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "navigateTo", ()=>navigateTo);
@@ -571,6 +575,7 @@ var _configDefault = parcelHelpers.interopDefault(_config);
 var _download = require("./download");
 var _downloadDefault = parcelHelpers.interopDefault(_download);
 var _mount = require("./mount");
+var _events = require("./events");
 function getMicroFrontendNameFromPathname(pathname) {
     const [, microFrontendId] = pathname.split("/");
     const microFrontend = (0, _configDefault.default).microFrontends.find((microFrontend)=>microFrontend.pathnameId === microFrontendId);
@@ -582,17 +587,33 @@ function getMicroFrontendEntryPointUrl(microFrontendName) {
 }
 const navigationHistory = [];
 function navigateTo(pathname) {
-    if (navigationHistory.length > 0) (0, _mount.unmountMicroFrontendInPage)();
     const microFrontendName = getMicroFrontendNameFromPathname(pathname);
     if (!microFrontendName) // TODO: load a "default" MFE
-    throw new Error("I don't know which Micro Frontend to load for the current URL :(");
+    throw new Error(`I don't know which Micro Frontend to load for "${pathname}"`);
+    if (navigationHistory.length > 0) {
+        const currentMicroFrontend = getMicroFrontendNameFromPathname(navigationHistory[navigationHistory.length - 1]);
+        (0, _events.dispatchEvent)((0, _events.eventNames).MICRO_FRONTEND_WILL_UNMOUNT, {
+            microFrontendName: currentMicroFrontend
+        });
+        (0, _mount.unmountMicroFrontendInPage)();
+        (0, _events.dispatchEvent)((0, _events.eventNames).MICRO_FRONTEND_DID_UNMOUNT, {
+            microFrontendName: currentMicroFrontend
+        });
+    }
+    (0, _events.dispatchEvent)((0, _events.eventNames).MICRO_FRONTEND_WILL_MOUNT, {
+        microFrontendName
+    });
     navigationHistory.push(pathname);
     window.history.pushState({}, "", pathname);
     const microFrontendEntryPointUrl = getMicroFrontendEntryPointUrl(microFrontendName);
-    return (0, _downloadDefault.default)(microFrontendEntryPointUrl).then((microFrontendDocument)=>(0, _mount.mountMicroFrontendInPage)(microFrontendName, microFrontendDocument));
+    return (0, _downloadDefault.default)(microFrontendEntryPointUrl).then((microFrontendDocument)=>(0, _mount.mountMicroFrontendInPage)(microFrontendName, microFrontendDocument)).then(()=>{
+        (0, _events.dispatchEvent)((0, _events.eventNames).MICRO_FRONTEND_DID_MOUNT, {
+            microFrontendName
+        });
+    });
 }
 
-},{"./config":"jtCLN","./download":"8EI4w","./mount":"k8IaG","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jtCLN":[function(require,module,exports) {
+},{"./config":"jtCLN","./download":"8EI4w","./mount":"k8IaG","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./events":"74nY7"}],"jtCLN":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 const configuration = {
@@ -708,15 +729,33 @@ function unmountMicroFrontendInPage() {
     });
 }
 
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"74nY7":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "eventNames", ()=>eventNames);
+parcelHelpers.export(exports, "dispatchEvent", ()=>dispatchEvent);
+const eventNames = {
+    MICRO_FRONTEND_WILL_UNMOUNT: "bootstrap_micro_frontend_will_unmount",
+    MICRO_FRONTEND_DID_UNMOUNT: "bootstrap_micro_frontend_did_unmount",
+    MICRO_FRONTEND_WILL_MOUNT: "bootstrap_micro_frontend_will_mount",
+    MICRO_FRONTEND_DID_MOUNT: "bootstrap_micro_frontend_did_mount"
+};
+function dispatchEvent(eventName, eventDetail) {
+    window.document.dispatchEvent(new window.CustomEvent(eventName, {
+        detail: eventDetail
+    }));
+}
+
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iQGVZ":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "createPublicApi", ()=>createPublicApi);
-function createPublicApi(navigateTo) {
+function createPublicApi({ navigateTo , eventNames  }) {
     window.bootstrap = {
         router: {
             navigateTo
-        }
+        },
+        eventNames
     };
 }
 
