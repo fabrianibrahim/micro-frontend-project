@@ -1,9 +1,10 @@
-function createPublicApi(navigateTo) {
+function createPublicApi({ navigateTo, eventNames }) {
     window.bootstrap = {
         router: {
-            navigateTo,
-        }
+            navigateTo
+        },
+        eventNames
     };
 }
 
-export { createPublicApi }
+export { createPublicApi };

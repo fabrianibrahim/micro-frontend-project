@@ -15,6 +15,8 @@
       <input v-model="password" type="password" id="password" name="password" required><br><br>
       <button type="submit">Sign In</button>
     </form>
+
+    <router-link to="/">Home</router-link>
   </body>
 
   </html>
@@ -39,6 +41,8 @@ export default {
       })
         .then(response => {
           if (response.status === 200) {
+            const token = response && response.data && response.data.data && response.data.data.token;
+            console.log('TOKEN', token);
             window.bootstrap.router.navigateTo('/play');
           } else {
             throw new Error('Invalid credentials.');
