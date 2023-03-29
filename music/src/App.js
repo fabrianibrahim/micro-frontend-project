@@ -1,13 +1,8 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Music from './components/Music';
+import Music from './components/Music/Music';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Music />} />
-      </Routes>
-    </BrowserRouter>
+    <Music />
   );
 }
 

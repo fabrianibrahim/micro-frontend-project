@@ -1,12 +1,12 @@
 import { createApp } from 'vue';
 import App from './App.vue';
-import LandingPage from './components/LandingPage.vue';
-import SignInPage from './components/SignInPage.vue';
+import WelcomePage from './components/WelcomePage.vue';
+import SignIn from './components/SignIn.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 
 const routes = [
-  { path: '/', component: LandingPage },
-  { path: '/signin', component: SignInPage },
+  { path: '/', component: WelcomePage },
+  { path: '/signin', component: SignIn },
 ];
 
 const router = createRouter({
